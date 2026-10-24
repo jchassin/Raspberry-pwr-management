@@ -1,43 +1,40 @@
+#!/usr/bin/python3
 #AUDIOPHONICS SPC POWER CONTROLLER
-#Python RPI-GPIO Script
+#Python script using pinctrl (Raspberry Pi OS Bookworm and later)
 #In case WiringPi do not work
-#Python, PIP and RPI.GPIO must be installed
-#(pip install RPi.GPIO)
+#pinctrl is part of the raspi-utils package, no extra dependency needed
 #Must be run as root to be able to send shutdown order
 
-try:
-	import RPi.GPIO as GPIO
-except RuntimeError:
-	print("Error importing RPi.GPIO!")
-GPIO.setmode(GPIO.BCM)
 import time
 import os
-
+import subprocess
 
 #Set GPIO used here :
 bootok = 22
 shutdown = 17
 
-print 'Audiophonics Shutdown script starting...'
-print "Asserting pins : "
-print "BootOK   : GPIO"+str(bootok)+"=out, High"
-print "ShutDown : GPIO"+str(shutdown)+"=in, Low"
+def gpio_set(pin, direction, level):
+    subprocess.run(["pinctrl", "set", str(pin), direction, level], check=True)
+
+def gpio_get(pin):
+    return "hi" in subprocess.run(["pinctrl", "get", str(pin)], check=True, capture_output=True, text=True).stdout
+
+print("Audiophonics Shutdown script starting...")
+print("Asserting pins : ")
+print("BootOK   : GPIO" + str(bootok) + "=out, High")
+print("ShutDown : GPIO" + str(shutdown) + "=in, Low")
 
 #When script Launched, send BOOT OK signal
-
-GPIO.setup(bootok, GPIO.OUT)
-GPIO.output(bootok, GPIO.HIGH)
+gpio_set(bootok, "op", "dh")
 
 # Initialise GPIO 17 for shutdown order
-GPIO.setup(shutdown, GPIO.IN)
+gpio_set(shutdown, "ip", "pn")
 
-
-while True :
-	sdstate = GPIO.input(shutdown)
-	#print sdstate
-	time.sleep(0.5)
-	if sdstate == 1 :
-		print "ShutDown order received, RaspBerry pi will now shutdown..."
-		time.sleep(0.5)
-		os.system('shutdown -h -P now')
-		break
+while True:
+    sdstate = gpio_get(shutdown)
+    time.sleep(0.5)
+    if sdstate:
+        print("ShutDown order received, RaspBerry pi will now shutdown...")
+        time.sleep(0.5)
+        os.system("shutdown -h -P now")
+        break
