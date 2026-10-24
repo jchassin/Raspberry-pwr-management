@@ -7,6 +7,8 @@
 
 Allo Digione is using GPIO17, so sds.sh must be modified if using this HAT board. (e.g. 27)
 
+The Python and shell scripts drive the GPIO through `pinctrl` (provided by the `raspi-utils` package on Raspberry Pi OS Bookworm and later), replacing the deprecated RPi.GPIO and WiringPi libraries.
+
 ## Using the SPC board with standard RPI power management overlays :
 
 Edit /boot/config.txt, add :
@@ -31,7 +33,7 @@ However the power will not be cut if you initiate Power Off from software, only 
 	if [[ $1 = "poweroff" ]]; then
 	mpc stop
 	systemctl stop nginx
-	python /home/pi/spc_moode.py shutdown
+	python3 /home/pi/spc_moode.py shutdown
 	#      poweroff
 	fi
 ```
@@ -42,7 +44,7 @@ However the power will not be cut if you initiate Power Off from software, only 
 	sudo nano /etc/rc.local
 	
 	Add before exit : 
-	python /home/pi/spc_moode.py &
+	python3 /home/pi/spc_moode.py &
 ```
 
 
